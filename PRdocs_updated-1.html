@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROJECT ROGUE // DOCS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #000000;
+  --surface: #080808;
+  --border: #333333;
+  --neon: #ffffff;
+  --neon-dim: #eeeeee;
+  --accent: #ffffff;
+  --glow: rgba(255,255,255,0.2);
+  --red: #ff2d55;
+  --cyan: #00ffcc;
+  --gold: #ffd700;
+  --sidebar-w: 260px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: #ffffff;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+#bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.18; }
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 9999;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  pointer-events: none;
+}
+
+#sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w);
+  background: #030303; border-right: 1px solid var(--border); z-index: 100;
+  display: flex; flex-direction: column; padding: 0;
+  transform: translateX(0); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  overflow-y: auto;
+}
+#sidebar::-webkit-scrollbar { width: 3px; }
+#sidebar::-webkit-scrollbar-thumb { background: #555; }
+
+.sidebar-logo { padding: 28px 20px 20px; border-bottom: 1px solid var(--border); }
+.sidebar-logo .title { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; letter-spacing: 0.15em; color: #ffffff; text-shadow: 0 0 20px rgba(255,255,255,0.8); }
+.sidebar-logo .sub { font-size: 11px; color: #ffffff; letter-spacing: 0.3em; margin-top: 4px; opacity: 0.9; }
+.sidebar-logo .version-badge { display: inline-block; margin-top: 10px; padding: 2px 8px; border: 1px solid var(--cyan); font-size: 10px; letter-spacing: 0.2em; color: var(--cyan); box-shadow: 0 0 8px rgba(0,255,204,0.4); }
+
+nav { flex: 1; padding: 16px 0; }
+.nav-section { padding: 6px 20px 2px; font-size: 10px; letter-spacing: 0.3em; color: #dddddd; text-transform: uppercase; margin-top: 12px; font-weight: bold; }
+nav a { display: flex; align-items: center; gap: 10px; padding: 9px 20px; color: #eeeeee; text-decoration: none; font-size: 12px; letter-spacing: 0.05em; transition: all 0.2s; border-left: 2px solid transparent; position: relative; }
+nav a .icon { width: 14px; text-align: center; color: #ffffff; }
+nav a:hover, nav a.active { color: #ffffff; border-left-color: #ffffff; background: rgba(255,255,255,0.1); text-shadow: 0 0 10px rgba(255,255,255,0.8); font-weight: bold; }
+nav a::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 0; background: rgba(255,255,255,0.08); transition: width 0.2s; }
+nav a:hover::after { width: 100%; }
+
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); font-size: 10px; color: #ffffff; opacity: 0.8; letter-spacing: 0.15em; }
+
+#menu-toggle { display: none; position: fixed; top: 16px; left: 16px; z-index: 200; width: 36px; height: 36px; background: #0a0a0a; border: 1px solid #555; cursor: pointer; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
+#menu-toggle span { width: 18px; height: 2px; background: #ffffff; transition: all 0.3s; }
+
+#main { margin-left: var(--sidebar-w); min-height: 100vh; position: relative; z-index: 1; }
+
+#hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 80px 60px; position: relative; overflow: hidden; border-bottom: 1px solid var(--border); }
+.hero-eyebrow { font-size: 11px; letter-spacing: 0.4em; color: #ffffff; opacity: 0.9; margin-bottom: 24px; animation: fadeUp 0.6s 0.2s forwards; }
+.hero-title { font-family: 'Orbitron', sans-serif; font-size: clamp(42px, 7vw, 90px); font-weight: 900; line-height: 0.95; letter-spacing: -0.02em; color: #ffffff; text-shadow: 0 0 60px rgba(255,255,255,0.6); opacity: 0; animation: fadeUp 0.7s 0.4s forwards; }
+.hero-title .stroke { -webkit-text-stroke: 1px rgba(255,255,255,0.8); color: transparent; text-shadow: none; }
+.hero-desc { max-width: 560px; margin-top: 28px; color: #ffffff; font-size: 14px; line-height: 1.8; opacity: 0; animation: fadeUp 0.7s 0.6s forwards; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
+.hero-stats { display: flex; gap: 40px; margin-top: 48px; opacity: 0; animation: fadeUp 0.7s 0.8s forwards; }
+.stat-item .num { font-family: 'Orbitron', sans-serif; font-size: 32px; font-weight: 700; color: #ffffff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+.stat-item .lbl { font-size: 10px; letter-spacing: 0.25em; color: #ffffff; opacity: 0.9; margin-top: 2px; font-weight: bold; }
+.hero-grid-lines { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 60px 60px; }
+.corner-mark { position: absolute; font-size: 10px; letter-spacing: 0.2em; color: #ffffff; opacity: 0.7; }
+.corner-mark.tl { top: 20px; left: 24px; }
+.corner-mark.br { bottom: 20px; right: 24px; }
+
+section { padding: 80px 60px; border-bottom: 1px solid var(--border); position: relative; }
+.section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 48px; }
+.section-num { font-family: 'Orbitron', sans-serif; font-size: 14px; color: #ffffff; font-weight: bold; letter-spacing: 0.2em; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+.section-title { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 700; color: #ffffff; letter-spacing: 0.05em; text-shadow: 0 0 15px rgba(255,255,255,0.6); }
+.section-line { flex: 1; height: 1px; background: linear-gradient(to right, #ffffff, transparent); opacity: 0.3; }
+
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s, transform 0.6s, text-shadow 0.6s; }
+.reveal.visible { opacity: 1; transform: translateY(0); text-shadow: 0 0 8px rgba(255,255,255,0.4); }
+
+.tree { font-family: 'Share Tech Mono', monospace; font-size: 13px; line-height: 1.9; color: #ffffff; padding: 30px; background: #040404; border: 1px solid #555; position: relative; box-shadow: inset 0 0 20px rgba(255,255,255,0.05); }
+.tree::before { content: '// VIRTUAL BOT STRUCTURE'; position: absolute; top: -1px; left: 20px; font-size: 10px; letter-spacing: 0.2em; color: #ffffff; background: #040404; padding: 0 8px; font-weight: bold; }
+.tree-line { display: flex; align-items: center; gap: 0; padding: 1px 0; cursor: default; transition: color 0.2s, text-shadow 0.2s; }
+.tree-line:hover { color: #ffffff; text-shadow: 0 0 10px #fff; }
+.tree-icon { margin-right: 6px; font-size: 12px; }
+.tree-dir { color: #ffffff; font-weight: bold; }
+.tree-file { color: #ffffff; opacity: 0.95; }
+.tree-file:hover { color: #ffffff; text-shadow: 0 0 12px rgba(255,255,255,0.8); opacity: 1; }
+.tree-badge { margin-left: auto; margin-right: 0; font-size: 9px; letter-spacing: 0.15em; padding: 1px 6px; border: 1px solid #888; color: #ffffff; font-weight: bold; }
+.tree-badge.game { border-color: rgba(255,255,255,0.5); color: #ffffff; }
+.tree-badge.plugin { border-color: var(--cyan); color: var(--cyan); }
+.tree-badge.db { border-color: var(--gold); color: var(--gold); }
+
+.cards { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 16px; scrollbar-width: thin; }
+.cards::-webkit-scrollbar { height: 8px; }
+.cards::-webkit-scrollbar-track { background: #111; border-radius: 4px; }
+.cards::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+.cards::-webkit-scrollbar-thumb:hover { background: #ffffff; }
+
+.card { flex: 0 0 320px; scroll-snap-align: start; background: #080808; padding: 28px; border: 1px solid #444; transition: background 0.2s, box-shadow 0.2s; position: relative; overflow: hidden; }
+.card::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,0.1), transparent 60%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.card:hover::after { opacity: 1; }
+.card:hover { background: #0c0c0c; box-shadow: 0 0 15px rgba(255,255,255,0.1); border-color: #777; }
+.card-icon { font-size: 26px; margin-bottom: 14px; display: block; color: #ffffff; }
+.card-title { font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; color: #ffffff; letter-spacing: 0.1em; margin-bottom: 8px; text-shadow: 0 0 8px rgba(255,255,255,0.4); }
+.card p { color: #ffffff; font-size: 12.5px; line-height: 1.7; opacity: 0.95; }
+.card .tag { display: inline-block; margin-top: 12px; font-size: 9px; letter-spacing: 0.2em; color: #ffffff; font-weight: bold; border: 1px solid #777; padding: 3px 8px; background: rgba(255,255,255,0.05); }
+
+.code-block { background: #050505; border: 1px solid #555; padding: 24px; font-family: 'Share Tech Mono', monospace; font-size: 12.5px; line-height: 1.8; color: #ffffff; position: relative; overflow-x: auto; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+.code-block .comment { color: #aaaaaa; font-style: italic; }
+.code-block .kw { color: #ffffff; font-weight: bold; }
+.code-block .fn { color: var(--cyan); text-shadow: 0 0 5px rgba(0,255,204,0.4); }
+.code-block .str { color: #dddddd; }
+.code-block .num { color: var(--gold); }
+.code-block .dec { color: #ff2d55; font-style: italic; }
+.code-label { position: absolute; top: -1px; right: 20px; font-size: 9px; letter-spacing: 0.2em; color: #ffffff; font-weight: bold; background: #040404; padding: 2px 8px; border: 1px solid #555; border-top: none; }
+
+.data-table { width: 100%; border-collapse: collapse; font-family: 'Share Tech Mono', monospace; font-size: 12px; color: #ffffff; }
+.data-table th { text-align: left; padding: 12px 16px; font-size: 10px; letter-spacing: 0.25em; color: #ffffff; font-weight: bold; border-bottom: 2px solid #555; font-family: 'Orbitron', sans-serif; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+.data-table td { padding: 12px 16px; border-bottom: 1px solid #333; color: #ffffff; transition: background 0.15s, color 0.15s; opacity: 0.95; }
+.data-table tr:hover td { color: #ffffff; background: rgba(255,255,255,0.08); opacity: 1; text-shadow: 0 0 8px rgba(255,255,255,0.3); }
+.data-table .highlight { color: #ffffff; font-weight: bold; }
+.data-table .cyan { color: var(--cyan); text-shadow: 0 0 5px var(--cyan); font-weight: bold; }
+.data-table .gold { color: var(--gold); text-shadow: 0 0 5px var(--gold); font-weight: bold; }
+.data-table .red { color: var(--red); text-shadow: 0 0 5px var(--red); font-weight: bold; }
+
+.stat-row { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid #222; }
+.stat-row .sname { width: 70px; font-size: 11px; font-weight: bold; letter-spacing: 0.15em; color: #ffffff; flex-shrink: 0; }
+.stat-bar-bg { flex: 1; height: 4px; background: #222; position: relative; border-radius: 2px; overflow: hidden; }
+.stat-bar-fill { height: 100%; background: #ffffff; box-shadow: 0 0 10px rgba(255,255,255,0.8); width: 0; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+.stat-row .sval { width: 35px; text-align: right; font-size: 11px; color: #ffffff; font-weight: bold; }
+
+.changelog-entry { border-left: 2px solid #555; padding-left: 24px; margin-bottom: 40px; position: relative; color: #ffffff; }
+.changelog-entry::before { content: ''; position: absolute; left: -5px; top: 6px; width: 8px; height: 8px; border: 2px solid #ffffff; background: #000; box-shadow: 0 0 8px #fff; }
+.cl-version { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700; color: #ffffff; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+.cl-date { font-size: 11px; color: #ffffff; font-weight: bold; letter-spacing: 0.2em; margin-left: 12px; opacity: 0.8; }
+.cl-type { display: inline-block; font-size: 9px; font-weight: bold; letter-spacing: 0.2em; padding: 2px 8px; margin-right: 6px; margin-bottom: 6px; }
+.cl-type.add { border: 1px solid var(--cyan); color: var(--cyan); background: rgba(0,255,204,0.1); }
+.cl-type.chg { border: 1px solid #ffffff; color: #ffffff; background: rgba(255,255,255,0.1); }
+.cl-type.fix { border: 1px solid var(--red); color: var(--red); background: rgba(255,45,85,0.1); }
+.cl-items { margin-top: 12px; }
+.cl-item { font-size: 12.5px; color: #ffffff; opacity: 0.95; padding: 4px 0 4px 14px; position: relative; }
+.cl-item::before { content: '—'; position: absolute; left: 0; color: #ffffff; font-weight: bold; }
+.cl-item:hover { opacity: 1; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+
+.glitch-text { position: relative; display: inline-block; color: #ffffff; }
+.glitch-text::before, .glitch-text::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; font-family: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
+.glitch-text::before { color: var(--red); animation: glitch1 3s infinite; clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%); }
+.glitch-text::after { color: var(--cyan); animation: glitch2 3s infinite; clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%); }
+
+.cursor::after { content: '█'; animation: blink 1s step-end infinite; color: #ffffff; font-size: 0.8em; text-shadow: 0 0 8px #fff; }
+.neon-divider { height: 1px; background: linear-gradient(to right, transparent, #ffffff, transparent); opacity: 0.3; margin: 0; box-shadow: 0 0 10px #fff; }
+
+.plugin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1px; background: #444; border: 1px solid #555; }
+.plugin-item { background: #080808; padding: 20px; font-size: 12px; color: #ffffff; transition: all 0.2s; cursor: default; display: flex; gap: 12px; align-items: flex-start; }
+.plugin-item:hover { background: #111; box-shadow: inset 0 0 20px rgba(255,255,255,0.05); }
+.plugin-item .pi-icon { font-size: 20px; flex-shrink: 0; color: #ffffff; }
+.plugin-item .pi-name { font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: bold; color: #ffffff; letter-spacing: 0.1em; margin-bottom: 4px; transition: color 0.2s; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
+.plugin-item:hover .pi-name { text-shadow: 0 0 12px rgba(255,255,255,0.8); }
+.plugin-item .pi-desc { font-size: 11.5px; color: #ffffff; opacity: 0.9; line-height: 1.6; }
+
+.timeline { position: relative; padding-left: 30px; }
+.timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #ffffff, transparent); opacity: 0.5; }
+.tl-item { margin-bottom: 36px; position: relative; }
+.tl-item::before { content: ''; position: absolute; left: -35px; top: 5px; width: 12px; height: 12px; background: #000; border: 2px solid #ffffff; box-shadow: 0 0 8px #fff; }
+.tl-phase { font-size: 10px; font-weight: bold; letter-spacing: 0.3em; color: #ffffff; opacity: 0.9; margin-bottom: 4px; }
+.tl-title { font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 8px; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+.tl-desc { font-size: 12.5px; color: #ffffff; opacity: 0.95; line-height: 1.7; }
+
+.lore-quote { border-left: 2px solid #ffffff; padding: 18px 24px; margin: 20px 0; font-style: italic; color: #ffffff; font-size: 13.5px; font-weight: bold; line-height: 1.8; position: relative; background: rgba(255,255,255,0.05); text-shadow: 0 0 5px rgba(255,255,255,0.2); }
+.lore-quote::before { content: '❝'; position: absolute; left: -10px; top: -6px; background: #000; font-size: 16px; padding: 0 4px; color: #ffffff; }
+
+.mob-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1px; background: #333; border: 1px solid #555; margin-top: 20px; }
+.mob-item { background: #080808; padding: 14px 16px; transition: background 0.2s; }
+.mob-item:hover { background: #111; }
+.mob-name { font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: bold; color: #ffffff; letter-spacing: 0.08em; margin-bottom: 6px; }
+.mob-stats { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #ffffff; opacity: 0.85; line-height: 1.6; }
+.mob-region { font-size: 9px; letter-spacing: 0.2em; color: var(--cyan); margin-top: 6px; font-weight: bold; }
+
+.two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px; }
+.sub-label { font-size: 11px; letter-spacing: 0.25em; color: #ffffff; font-weight: bold; margin-bottom: 16px; font-family: 'Orbitron', sans-serif; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes glitch1 { 0%,90%,100% { transform: translate(0); opacity: 0; } 92% { transform: translate(-2px, 0); opacity: 0.7; } 94% { transform: translate(2px, 0); opacity: 0.5; } 96% { transform: translate(-1px, 0); opacity: 0; } }
+@keyframes glitch2 { 0%,88%,100% { transform: translate(0); opacity: 0; } 90% { transform: translate(2px, 0); opacity: 0.6; } 92% { transform: translate(-1px, 0); opacity: 0.3; } }
+
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+  #sidebar { width: 260px; transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #menu-toggle { display: flex; }
+  #main { margin-left: 0; }
+  #hero, section { padding: 80px 24px; }
+  .hero-stats { flex-wrap: wrap; gap: 24px; }
+  .cards { scroll-snap-type: x mandatory; }
+  .card { flex: 0 0 85%; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<button id="menu-toggle" onclick="toggleSidebar()" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="title">PROJECT ROGUE</div>
+    <div class="sub">DOCUMENTATION // v0.2.0</div>
+    <div class="version-badge">ROGUE TALES · RPG BOT</div>
+  </div>
+  <nav>
+    <div class="nav-section">Navigation</div>
+    <a href="#hero" class="active"><span class="icon">◈</span> Overview</a>
+    <a href="#structure"><span class="icon">⌥</span> Code Structure</a>
+    <a href="#architecture"><span class="icon">⊞</span> Architecture</a>
+    <div class="nav-section">Game Systems</div>
+    <a href="#systems"><span class="icon">⚔</span> Core Systems</a>
+    <a href="#combat"><span class="icon">🗡</span> Combat Engine</a>
+    <a href="#mobs"><span class="icon">👹</span> Mob Catalogue</a>
+    <a href="#plugins"><span class="icon">⊕</span> Plugins</a>
+    <a href="#stats"><span class="icon">◎</span> Stats & Economy</a>
+    <a href="#quests"><span class="icon">📋</span> Quests</a>
+    <div class="nav-section">World</div>
+    <a href="#lore"><span class="icon">📜</span> Lore & World</a>
+    <a href="#phases"><span class="icon">◑</span> Build Phases</a>
+    <div class="nav-section">Meta</div>
+    <a href="#updates"><span class="icon">⬆</span> Updates</a>
+    <a href="#deploy"><span class="icon">▶</span> Deployment</a>
+  </nav>
+  <div class="sidebar-footer">PYROGRAM · MONGODB · PYTHON 3.10+</div>
+</nav>
+
+<div id="main">
+
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <section id="hero" style="padding-top:0;padding-bottom:0;border:none;min-height:100vh;display:flex;flex-direction:column;justify-content:center;">
+    <div class="hero-grid-lines"></div>
+    <div class="corner-mark tl">SYS // DOCS-01</div>
+    <div class="corner-mark br">ROGUE TALES ENGINE</div>
+    <div class="hero-eyebrow">TELEGRAM RPG BOT // FULL DOCUMENTATION</div>
+    <h1 class="hero-title">
+      <span class="glitch-text" data-text="PROJECT">PROJECT</span><br>
+      <span class="stroke glitch-text" data-text="ROGUE">ROGUE</span>
+    </h1>
+    <p class="hero-desc">
+      A massive multiplayer text-based RPG bot built on Kurigram (Pyrogram) and MongoDB.
+      Deep economy, turn-based combat, dungeon exploration, alchemy, faith systems, and
+      a persistent world cycle. <span class="cursor"></span>
+    </p>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="num">14+</div><div class="lbl">PLUGINS</div></div>
+      <div class="stat-item"><div class="num">500+</div><div class="lbl">USERS TARGET</div></div>
+      <div class="stat-item"><div class="num">8</div><div class="lbl">GAME MODULES</div></div>
+      <div class="stat-item"><div class="num">v0.2</div><div class="lbl">CURRENT BUILD</div></div>
+    </div>
+  </section>
+
+  <div class="neon-divider"></div>
+
+  <!-- ═══════════════ 01 · STRUCTURE ═══════════════ -->
+  <section id="structure">
+    <div class="section-header reveal">
+      <span class="section-num">01</span><h2 class="section-title">VIRTUAL CODE STRUCTURE</h2><div class="section-line"></div>
+    </div>
+    <div class="tree reveal">
+      <div class="tree-line"><span class="tree-dir">📁 ProjectRogue/</span></div>
+      <div class="tree-line" style="padding-left:16px"><span class="tree-icon tree-dir">📁</span><span class="tree-dir">bot/</span></div>
+      <div class="tree-line" style="padding-left:32px"><span class="tree-icon">📄</span><span class="tree-file">main.py</span><span class="tree-badge">ENTRY</span></div>
+      <div class="tree-line" style="padding-left:32px"><span class="tree-icon">📄</span><span class="tree-file">config.py</span><span class="tree-badge">CONFIG</span></div>
+      <div class="tree-line" style="padding-left:32px"><span class="tree-icon">📄</span><span class="tree-file">__main__.py</span><span class="tree-badge">RUNNER</span></div>
+      <div class="tree-line" style="padding-left:32px"><span class="tree-icon">📄</span><span class="tree-file">config.txt</span><span class="tree-badge">ENV</span></div>
+      <div class="tree-line" style="padding-left:32px;margin-top:4px"><span class="tree-icon tree-dir">📁</span><span class="tree-dir">game/</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">⚔️</span><span class="tree-file">combat.py</span><span class="tree-badge game">GAME</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🗺️</span><span class="tree-file">dungeon.py</span><span class="tree-badge game">GAME</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">⚙️</span><span class="tree-file">mechanics.py</span><span class="tree-badge game">GAME</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">📜</span><span class="tree-file">lore.py</span><span class="tree-badge game">GAME</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🎯</span><span class="tree-file">quests.py</span><span class="tree-badge game">GAME</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🎒</span><span class="tree-file">inventory.py</span><span class="tree-badge game">GAME</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🌗</span><span class="tree-file">world_cycle.py</span><span class="tree-badge game">GAME</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">📄</span><span class="tree-file">__init__.py</span><span class="tree-badge">EXPORTS</span></div>
+      <div class="tree-line" style="padding-left:32px;margin-top:4px"><span class="tree-icon tree-dir">📁</span><span class="tree-dir">plugins/</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">▶️</span><span class="tree-file">start.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">⚔️</span><span class="tree-file">combat.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🏰</span><span class="tree-file">dungeon.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🎯</span><span class="tree-file">quests.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🛒</span><span class="tree-file">market.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🏆</span><span class="tree-file">leaderboard.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🙏</span><span class="tree-file">faith.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">⚔️</span><span class="tree-file">pvp.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🤝</span><span class="tree-file">social.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🎮</span><span class="tree-file">arcade.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🧪</span><span class="tree-file">skills_alchemy.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🎒</span><span class="tree-file">inventory.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">📖</span><span class="tree-file">lore_plugin.py</span><span class="tree-badge plugin">PLUGIN</span></div>
+      <div class="tree-line" style="padding-left:32px;margin-top:4px"><span class="tree-icon tree-dir">📁</span><span class="tree-dir">database/</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🗄️</span><span class="tree-file">db.py</span><span class="tree-badge db">MONGO</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">📄</span><span class="tree-file">__init__.py</span><span class="tree-badge db">EXPORTS</span></div>
+      <div class="tree-line" style="padding-left:32px;margin-top:4px"><span class="tree-icon tree-dir">📁</span><span class="tree-dir">utils/</span></div>
+      <div class="tree-line" style="padding-left:48px"><span class="tree-icon">🔒</span><span class="tree-file">decorators.py</span><span class="tree-badge">UTIL</span></div>
+      <div class="tree-line" style="padding-left:16px;margin-top:8px"><span class="tree-icon tree-dir">📁</span><span class="tree-dir">instructions/</span></div>
+      <div class="tree-line" style="padding-left:32px"><span class="tree-icon">📋</span><span class="tree-file">instructions.md</span><span class="tree-badge">SPEC</span></div>
+      <div class="tree-line" style="padding-left:16px"><span class="tree-icon tree-dir">📁</span><span class="tree-dir">logs/</span></div>
+      <div class="tree-line" style="padding-left:32px"><span class="tree-icon">📝</span><span class="tree-file">roguebot.log</span><span class="tree-badge">LOG</span></div>
+      <div class="tree-line" style="margin-top:8px"><span class="tree-icon">📋</span><span class="tree-file">requirements.txt</span></div>
+      <div class="tree-line"><span class="tree-icon">📖</span><span class="tree-file">CHANGELOG.md</span></div>
+      <div class="tree-line"><span class="tree-icon">🔨</span><span class="tree-file">BUILD_PROMPT.md</span></div>
+      <div class="tree-line"><span class="tree-icon">📄</span><span class="tree-file">README.md</span></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 02 · ARCHITECTURE ═══════════════ -->
+  <section id="architecture">
+    <div class="section-header reveal">
+      <span class="section-num">02</span><h2 class="section-title">ARCHITECTURE</h2><div class="section-line"></div>
+    </div>
+    <div class="code-block reveal" style="margin-bottom:20px;">
+      <span class="code-label">main.py · startup flow</span>
+<span class="comment"># ── Startup Sequence ──────────────────────────────────────────────</span>
+<span class="kw">async def</span> <span class="fn">boot</span>():
+    mk_log()                          <span class="comment"># RotatingFileHandler (3MB × 5 backups)</span>
+    scan_plugins()                    <span class="comment"># Dynamic importlib plugin loader</span>
+    <span class="kw">await</span> app.start()                <span class="comment"># Pyrogram/Kurigram client</span>
+    <span class="kw">await</span> init_db()                  <span class="comment"># Motor MongoDB connect (pool 20–200)</span>
+    <span class="kw">await</span> ping_db()                  <span class="comment"># Health check</span>
+    <span class="kw">await</span> WORLD_CYCLE.start()        <span class="comment"># Day/Night background service</span>
+    <span class="kw">await</span> send_gc(report)            <span class="comment"># Boot report to LOG_GC</span>
+    <span class="kw">await</span> idle()
+    </div>
+    <div class="two-col reveal" style="margin-bottom:20px;">
+      <div class="code-block" style="font-size:11.5px;">
+        <span class="code-label">config.py · env vars</span>
+<span class="kw">class</span> <span class="fn">Config</span>:
+  API_ID        <span class="comment"># Telegram API ID (required)</span>
+  API_HASH      <span class="comment"># Telegram API hash (required)</span>
+  BOT_TOKEN     <span class="comment"># Bot token (required)</span>
+  MONGO_URI     <span class="comment"># MongoDB URI (required)</span>
+  SUDO_USERS    <span class="comment"># Comma-sep int IDs</span>
+  LOG_GC        <span class="comment"># Log group chat ID</span>
+  WORKERS       <span class="comment"># default 64</span>
+  DAY_NIGHT_INTERVAL_SEC  <span class="comment"># default 900</span>
+      </div>
+      <div class="code-block" style="font-size:11.5px;">
+        <span class="code-label">database/db.py · collections</span>
+<span class="fn">usersdb</span>   = db.<span class="str">users</span>
+<span class="fn">itemsdb</span>   = db.<span class="str">items</span>
+<span class="fn">questsdb</span>  = db.<span class="str">quests</span>
+<span class="fn">clansdb</span>   = db.<span class="str">clans</span>
+<span class="fn">nationsdb</span> = db.<span class="str">nations</span>
+<span class="fn">marketdb</span>  = db.<span class="str">market</span>
+<span class="fn">worlddb</span>   = db.<span class="str">world_state</span>
+      </div>
+    </div>
+    <div class="cards reveal">
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">⚡</span><div class="card-title">ASYNC FIRST</div>
+        <p>All DB calls, API requests and heavy math are awaited — never blocking the Pyrogram event loop. Motor driver throughout.</p>
+        <span class="tag">KURIGRAM · MOTOR</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">🔌</span><div class="card-title">PLUGIN LOADER</div>
+        <p>scan_plugins() uses importlib to dynamically load all *.py files in bot/plugins/. Failed plugins log but never crash boot.</p>
+        <span class="tag">IMPORTLIB · SCAN</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">🗄️</span><div class="card-title">MONGODB</div>
+        <p>7 collections: users, items, quests, clans, nations, market, world_state. Pool 20–200. DNS forced to 8.8.8.8 for VPS stability.</p>
+        <span class="tag">MOTOR · ASYNC</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">🌗</span><div class="card-title">WORLD CYCLE</div>
+        <p>Background asyncio task ticks day/night phase at configurable intervals (DAY_NIGHT_INTERVAL_SEC). Survives tick failures gracefully.</p>
+        <span class="tag">WORLD_CYCLE_SERVICE</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 03 · CORE SYSTEMS ═══════════════ -->
+  <section id="systems">
+    <div class="section-header reveal">
+      <span class="section-num">03</span><h2 class="section-title">CORE GAME SYSTEMS</h2><div class="section-line"></div>
+    </div>
+    <div class="cards reveal">
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">🎭</span><div class="card-title">CHARACTER PATHS</div>
+        <p>Three paths at creation: Warrior 🛡️, Rogue 🗡️, Mage 🔮. Each unlocks path-specific skills from SKILLS_CATALOGUE with unique synergies and stat scaling.</p>
+        <span class="tag">MECHANICS.PY · START.PY</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">📦</span><div class="card-title">INVENTORY SYSTEM</div>
+        <p>Item, Enchantment, ItemSkin, Inventory dataclasses (slots=True). 4-slot chests: weapons, armoury, potions, tools. 60-item cap. Enchants stack additively.</p>
+        <span class="tag">INVENTORY.PY</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">💰</span><div class="card-title">DEEP ECONOMY</div>
+        <p>Gold/Gems/Bank wallet. Gold sinks via durability, market tax, healing costs. Player-to-player trading. NPC shop with programmatic sale events.</p>
+        <span class="tag">MARKET.PY · DB.PY</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">🧪</span><div class="card-title">ALCHEMY</div>
+        <p>ALCHEMY_RECIPES catalogue with reagent requirements. apply_enchant() mutates items with stat bonuses. available_recipes() filters by player ingredients.</p>
+        <span class="tag">SKILLS_ALCHEMY.PY</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">🙏</span><div class="card-title">FAITH SYSTEM</div>
+        <p>Full pantheon of gods, each with domains and day/night restrictions. Praying grants +10 favour. Blessings and curses applied as status effects.</p>
+        <span class="tag">FAITH.PY · LORE.PY</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">🤝</span><div class="card-title">SOCIAL & CLANS</div>
+        <p>Friend requests, accept/decline flow. Clan creation with 24-char name limit, vault deposit, clan-wide buffs. Nation hierarchy above clans for politics.</p>
+        <span class="tag">SOCIAL.PY · DB.PY</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 04 · COMBAT ENGINE ═══════════════ -->
+  <section id="combat">
+    <div class="section-header reveal">
+      <span class="section-num">04</span><h2 class="section-title">COMBAT ENGINE</h2><div class="section-line"></div>
+    </div>
+    <div class="lore-quote reveal">
+      Turn-based combat with status effects, skills, mana, cooldowns, and lore drops on mob defeat.
+      Every fight tick is a pure function: given state → return new state. Night mobs gain +12 ATK / +6 DEF.
+    </div>
+    <div class="two-col reveal" style="margin-bottom:28px;">
+      <div>
+        <p class="sub-label">STATUS EFFECTS</p>
+        <table class="data-table">
+          <thead><tr><th>EFFECT</th><th>TYPE</th><th>TICK DMG</th><th>DUR</th><th>SPECIAL</th></tr></thead>
+          <tbody>
+            <tr><td>🟢 Poisoned</td><td class="cyan">DEBUFF</td><td>12</td><td>3</td><td>—</td></tr>
+            <tr><td>🩸 Bleeding</td><td class="cyan">DEBUFF</td><td>8</td><td>4</td><td>-4 DEF</td></tr>
+            <tr><td>👁️ Blinded</td><td class="cyan">DEBUFF</td><td>0</td><td>2</td><td>-15 ATK</td></tr>
+            <tr><td>🧊 Frozen</td><td class="cyan">DEBUFF</td><td>0</td><td>1</td><td>Skip turn</td></tr>
+            <tr><td>🕳️ Void-Cursed</td><td class="cyan">DEBUFF</td><td>5</td><td>5</td><td>-5 all</td></tr>
+            <tr><td>✨ Blessed</td><td class="gold">BUFF</td><td>—</td><td>4</td><td>+10 Faith</td></tr>
+            <tr><td>🔥 Enraged</td><td class="gold">BUFF</td><td>—</td><td>3</td><td>+20 ATK/-10 DEF</td></tr>
+            <tr><td>🌑 Shadow Step</td><td class="gold">BUFF</td><td>—</td><td>1</td><td>Pierce DEF</td></tr>
+            <tr><td>💜 Arcane Surge</td><td class="gold">BUFF</td><td>—</td><td>2</td><td>2× INT dmg</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <p class="sub-label">COMBAT STATE</p>
+        <div class="code-block" style="font-size:11.5px;margin-bottom:16px;">
+<span class="dec">@dataclass</span>
+<span class="kw">class</span> <span class="fn">CombatState</span>:
+  player_hp:     <span class="kw">int</span>
+  player_hp_max: <span class="kw">int</span>
+  mob:           <span class="fn">CombatMob</span>
+  player_mana:   <span class="kw">int</span> = <span class="num">60</span>
+  turn:          <span class="kw">int</span> = <span class="num">0</span>
+  log:           <span class="kw">List</span>[<span class="kw">str</span>]
+  finished:      <span class="kw">bool</span> = <span class="num">False</span>
+  player_won:    <span class="kw">bool</span> = <span class="num">False</span>
+  loot_drop:     <span class="fn">Optional</span>[Dict]
+  lore_drop:     <span class="fn">Optional</span>[Dict]
+        </div>
+        <p class="sub-label">PVP DUEL ENGINE</p>
+        <div class="code-block" style="font-size:11.5px;">
+<span class="comment"># _sim_duel() runs up to 30 turns</span>
+<span class="comment"># Random ±3–5 variance per hit</span>
+<span class="comment"># Challenger issues /duel @target</span>
+<span class="comment"># Target accepts via inline button</span>
+<span class="comment"># Winner gets XP + wager gold</span>
+<span class="kw">await</span> <span class="fn">log_pvp_result</span>(uid, result)
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 05 · MOB CATALOGUE ═══════════════ -->
+  <section id="mobs">
+    <div class="section-header reveal">
+      <span class="section-num">05</span><h2 class="section-title">MOB CATALOGUE</h2><div class="section-line"></div>
+    </div>
+    <div class="lore-quote reveal">
+      20 unique mobs across 5 regions. Level-scaled via CombatMob.from_catalogue(). Night mobs in night_only/voidmarsh/thornwood gain bonus stats under the world cycle.
+    </div>
+    <div class="mob-grid reveal">
+      <div class="mob-item"><div class="mob-name">🟢 Green Slime</div><div class="mob-stats">HP 40 · ATK 5 · DEF 2<br>XP 15 · Gold 8</div><div class="mob-region">VAELTHORN · LVL 1–5</div></div>
+      <div class="mob-item"><div class="mob-name">👺 Goblin Scout</div><div class="mob-stats">HP 70 · ATK 12 · DEF 5<br>XP 35 · Gold 20</div><div class="mob-region">VAELTHORN · LVL 1–10</div></div>
+      <div class="mob-item"><div class="mob-name">🐀 Void-Touched Rat</div><div class="mob-stats">HP 55 · ATK 14 · DEF 3<br>XP 40 · Cursed on hit</div><div class="mob-region">VAELTHORN · LVL 2+</div></div>
+      <div class="mob-item"><div class="mob-name">🗡️ Corrupt Guard</div><div class="mob-stats">HP 110 · ATK 22 · DEF 14<br>XP 70 · Bleed on hit</div><div class="mob-region">VAELTHORN · LVL 5+</div></div>
+      <div class="mob-item"><div class="mob-name">🐺 Dire Wolf</div><div class="mob-stats">HP 100 · ATK 20 · DEF 8<br>XP 60 · Bleed on hit</div><div class="mob-region">THORNWOOD · LVL 8–14</div></div>
+      <div class="mob-item"><div class="mob-name">🔪 Road Bandit</div><div class="mob-stats">HP 130 · ATK 28 · DEF 12<br>XP 90 · Gold 55</div><div class="mob-region">THORNWOOD · LVL 8–20</div></div>
+      <div class="mob-item"><div class="mob-name">🌿 Vine Horror</div><div class="mob-stats">HP 160 · ATK 25 · DEF 18<br>XP 110 · Poison on hit</div><div class="mob-region">THORNWOOD · LVL 14+</div></div>
+      <div class="mob-item"><div class="mob-name">🧙 Forest Witch</div><div class="mob-stats">HP 140 · ATK 35 · DEF 8<br>XP 130 · Blind on hit</div><div class="mob-region">THORNWOOD · LVL 14+</div></div>
+      <div class="mob-item"><div class="mob-name">🪨 Stone Troll</div><div class="mob-stats">HP 220 · ATK 40 · DEF 20<br>XP 150 · Bleed on hit</div><div class="mob-region">ASHPEAK · LVL 18–25</div></div>
+      <div class="mob-item"><div class="mob-name">🤖 Dwarf Automaton</div><div class="mob-stats">HP 280 · ATK 50 · DEF 30<br>XP 200 · Gold 120</div><div class="mob-region">ASHPEAK · LVL 25+</div></div>
+      <div class="mob-item"><div class="mob-name">🌋 Lava Sprite</div><div class="mob-stats">HP 200 · ATK 55 · DEF 15<br>XP 220 · Poison on hit</div><div class="mob-region">ASHPEAK · LVL 14+</div></div>
+      <div class="mob-item"><div class="mob-name">👻 Night Wraith</div><div class="mob-stats">HP 180 · ATK 55 · DEF 10<br>XP 200 · Cursed on hit</div><div class="mob-region">NIGHT ONLY · LVL 15+</div></div>
+      <div class="mob-item"><div class="mob-name">🦀 Void Crawler</div><div class="mob-stats">HP 300 · ATK 65 · DEF 22<br>XP 300 · Cursed on hit</div><div class="mob-region">VOIDMARSH · LVL 18+</div></div>
+      <div class="mob-item"><div class="mob-name">🌑 Shade Lord</div><div class="mob-stats">HP 420 · ATK 80 · DEF 28<br>XP 420 · Bleed on hit</div><div class="mob-region">VOIDMARSH · LVL 22+</div></div>
+      <div class="mob-item"><div class="mob-name">🕯️ Void Cleric</div><div class="mob-stats">HP 360 · ATK 70 · DEF 20<br>XP 380 · Cursed on hit</div><div class="mob-region">VOIDMARSH · LVL 20+</div></div>
+      <div class="mob-item"><div class="mob-name">🛡️ Dungeon Guardian</div><div class="mob-stats">HP 350 · ATK 65 · DEF 30<br>XP 320 · Gold 200</div><div class="mob-region">DUNGEON · LVL 20+</div></div>
+      <div class="mob-item"><div class="mob-name">🐉 Young Dragon</div><div class="mob-stats">HP 800 · ATK 120 · DEF 50<br>XP 1000 · Gold 600</div><div class="mob-region">DUNGEON BOSS · LVL 30+</div></div>
+      <div class="mob-item"><div class="mob-name">🌀 Void Herald</div><div class="mob-stats">HP 1200 · ATK 160 · DEF 60<br>XP 3000 · Cursed on hit</div><div class="mob-region">SOLARIUM · LVL 40+</div></div>
+      <div class="mob-item"><div class="mob-name">🐲 Ancient Dragon</div><div class="mob-stats">HP 2000 · ATK 200 · DEF 80<br>XP 5000 · Gold 2000</div><div class="mob-region">SOLARIUM · LVL 45+</div></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 06 · PLUGIN REGISTRY ═══════════════ -->
+  <section id="plugins">
+    <div class="section-header reveal">
+      <span class="section-num">06</span><h2 class="section-title">PLUGIN REGISTRY</h2><div class="section-line"></div>
+    </div>
+    <p class="reveal" style="color:#ffffff;font-size:13px;margin-bottom:24px;opacity:0.9;">
+      All handlers live in <code style="color:#ffffff;background:#222;padding:2px 6px;font-weight:bold;">bot/plugins/</code>. Auto-loaded on boot via importlib scanner.
+    </p>
+    <div class="plugin-grid reveal">
+      <div class="plugin-item"><span class="pi-icon">▶️</span><div><div class="pi-name">START</div><div class="pi-desc">Character creation, path selection (Warrior/Rogue/Mage), profile display with all stats, world phase banner.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">⚔️</span><div><div class="pi-name">COMBAT</div><div class="pi-desc">Turn-based PvE fights. /fight command. Skill use, status effect resolution, loot and lore drops on defeat.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">🏰</span><div><div class="pi-name">DUNGEON</div><div class="pi-desc">Procedural floor generator. Room types: empty, mob, chest, trap, shrine, boss. Hidden dungeon rare spawns.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">🎯</span><div><div class="pi-name">QUESTS</div><div class="pi-desc">Daily quests from 30-quest pool (level-filtered). 10-chapter story arc. Quest progress tracking in DB.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">🛒</span><div><div class="pi-name">MARKET</div><div class="pi-desc">Player-to-player trading. NPC shop listings. Buy/sell/list commands. Tax sink on transactions.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">🏆</span><div><div class="pi-name">LEADERBOARD</div><div class="pi-desc">Global rankings by XP, gold, kills, dungeon clears, and faith score. Paginated output.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">🙏</span><div><div class="pi-name">FAITH</div><div class="pi-desc">/pray command with god pantheon keyboard. +10 faith favour per prayer. Day/night god restrictions. NPC interactions with rumours.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">⚔️</span><div><div class="pi-name">PVP</div><div class="pi-desc">/duel @target command. Inline accept/decline. Simulated combat up to 30 turns. XP and gold rewards. log_pvp_result() to DB.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">🤝</span><div><div class="pi-name">SOCIAL</div><div class="pi-desc">Friend requests, accept/decline flow. /clan create with 24-char cap. Clan vault gold deposits. Friend list display.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">🎮</span><div><div class="pi-name">ARCADE</div><div class="pi-desc">Slots (8 symbols, weighted), dice duel, coin flip. Bet 10–5000 gold. Triple 💎 pays 50×. Two-of-a-kind breaks even.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">🧪</span><div><div class="pi-name">SKILLS & ALCHEMY</div><div class="pi-desc">Brew potions from reagents using ALCHEMY_RECIPES. apply_enchant() upgrades gear stats. available_recipes() filters by inventory.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">🎒</span><div><div class="pi-name">INVENTORY</div><div class="pi-desc">/inventory command. View 4-slot chests. Equip/unequip items. rolled_stats() shows final stat bonuses from enchants.</div></div></div>
+      <div class="plugin-item"><span class="pi-icon">📖</span><div><div class="pi-name">LORE</div><div class="pi-desc">Lore fragment viewer. random_rumour(), random_ambient() surface world flavour. roll_lore_drop() on mob kill.</div></div></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 07 · STATS & ECONOMY ═══════════════ -->
+  <section id="stats">
+    <div class="section-header reveal">
+      <span class="section-num">07</span><h2 class="section-title">STATS & ECONOMY</h2><div class="section-line"></div>
+    </div>
+    <div class="two-col reveal">
+      <div>
+        <p class="sub-label">PLAYER STAT WEIGHTS (LVL 50)</p>
+        <div id="stat-bars">
+          <div class="stat-row"><span class="sname">STR</span><div class="stat-bar-bg"><div class="stat-bar-fill" data-w="72"></div></div><span class="sval">72</span></div>
+          <div class="stat-row"><span class="sname">AGI</span><div class="stat-bar-bg"><div class="stat-bar-fill" data-w="65"></div></div><span class="sval">65</span></div>
+          <div class="stat-row"><span class="sname">INT</span><div class="stat-bar-bg"><div class="stat-bar-fill" data-w="80"></div></div><span class="sval">80</span></div>
+          <div class="stat-row"><span class="sname">HP</span><div class="stat-bar-bg"><div class="stat-bar-fill" data-w="90"></div></div><span class="sval">90</span></div>
+          <div class="stat-row"><span class="sname">LUK</span><div class="stat-bar-bg"><div class="stat-bar-fill" data-w="55"></div></div><span class="sval">55</span></div>
+          <div class="stat-row"><span class="sname">FAITH</span><div class="stat-bar-bg"><div class="stat-bar-fill" data-w="45"></div></div><span class="sval">45</span></div>
+        </div>
+        <div class="code-block" style="font-size:11px;margin-top:20px;">
+          <span class="code-label">stat formula</span>
+<span class="comment"># Base + gear_bonus + potion_bonus + lvl_scale</span>
+<span class="fn">attack</span>  = str * <span class="num">2</span> + max(lvl-<span class="num">1</span>, <span class="num">0</span>)
+<span class="fn">defense</span> = agi + faith // <span class="num">2</span>
+<span class="fn">hp</span>      = base_hp + (lvl-<span class="num">1</span>) * <span class="num">8</span>
+        </div>
+      </div>
+      <div>
+        <p class="sub-label">CURRENCY TIERS</p>
+        <table class="data-table" style="margin-bottom:24px;">
+          <thead><tr><th>TIER</th><th>SYMBOL</th><th>USAGE</th></tr></thead>
+          <tbody>
+            <tr><td class="highlight">Copper</td><td>🪙</td><td>Basic trades, healing</td></tr>
+            <tr><td class="highlight">Silver</td><td>🥈</td><td>Equipment, enchants</td></tr>
+            <tr><td class="highlight">Gold</td><td class="gold">💰</td><td>Rare items, market tax</td></tr>
+            <tr><td class="highlight">Gems</td><td class="cyan">💎</td><td>Premium cosmetics, skins</td></tr>
+          </tbody>
+        </table>
+        <p class="sub-label">DUNGEON LOOT TIERS</p>
+        <table class="data-table">
+          <thead><tr><th>TIER</th><th>ITEMS</th><th>STAT BONUS</th></tr></thead>
+          <tbody>
+            <tr><td class="highlight">Common</td><td>HP Potion, Wood Sword</td><td>HP+50 / ATK+8</td></tr>
+            <tr><td class="cyan">Rare</td><td>Iron Shield, Silver Blade</td><td>DEF+15 / ATK+25</td></tr>
+            <tr><td class="gold">Epic</td><td>Mithril Mail, Void Blade</td><td>DEF+40 / ATK+60</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 08 · QUESTS ═══════════════ -->
+  <section id="quests">
+    <div class="section-header reveal">
+      <span class="section-num">08</span><h2 class="section-title">QUEST SYSTEM</h2><div class="section-line"></div>
+    </div>
+    <div class="lore-quote reveal">
+      30 daily quests filtered by player level. 10-chapter story arc. Joint quests for 2+ players. Post-game 1000+ quest database unlocks after the main storyline.
+    </div>
+    <div class="two-col reveal" style="margin-top:24px;">
+      <div>
+        <p class="sub-label">QUEST TYPES</p>
+        <table class="data-table">
+          <thead><tr><th>TYPE</th><th>DESCRIPTION</th></tr></thead>
+          <tbody>
+            <tr><td class="cyan">kill</td><td>Slay N specific mob</td></tr>
+            <tr><td class="cyan">kill_any</td><td>Win any N fights</td></tr>
+            <tr><td class="cyan">dungeon_rooms</td><td>Survive N dungeon rooms</td></tr>
+            <tr><td class="cyan">gold</td><td>Accumulate N gold</td></tr>
+            <tr><td class="cyan">pray</td><td>Pray N times today</td></tr>
+            <tr><td class="cyan">brew</td><td>Craft N alchemy items</td></tr>
+            <tr><td class="cyan">pvp_win</td><td>Win N duels</td></tr>
+            <tr><td class="cyan">lore_drops</td><td>Collect N lore fragments</td></tr>
+            <tr><td class="cyan">arcade_plays</td><td>Play N arcade rounds</td></tr>
+            <tr><td class="cyan">clan_deposit</td><td>Deposit N gold to vault</td></tr>
+            <tr><td class="cyan">market_txn</td><td>Complete N market trades</td></tr>
+            <tr><td class="cyan">visit</td><td>Visit a specific system</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <p class="sub-label">STORY ARC — 10 CHAPTERS</p>
+        <div class="timeline" style="padding-left:24px;">
+          <div class="tl-item">
+            <div class="tl-phase">CH 1–3</div>
+            <div class="tl-title">VAELTHORN ORIGINS</div>
+            <div class="tl-desc">Player awakens as a Rogue. Defend hometown, uncover the Sundering's aftermath.</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-phase">CH 4–6</div>
+            <div class="tl-title">THORNWOOD TRIALS</div>
+            <div class="tl-desc">Journey into the cursed forest. Confront the Void Clergy's growing influence.</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-phase">CH 7–8</div>
+            <div class="tl-title">ASHPEAK ASCENSION</div>
+            <div class="tl-desc">Reach the dwarven ruins. Seek a way to harness the Anima Cores.</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-phase">CH 9–10</div>
+            <div class="tl-title">THE VOIDMARSH ENDGAME</div>
+            <div class="tl-desc">Descend into the Voidmarsh. Face the Void Herald and discover what Solarius sealed.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="code-block reveal" style="margin-top:24px;">
+      <span class="code-label">quests.py · key functions</span>
+<span class="fn">generate_daily_quest</span>(user_level)           <span class="comment"># Returns filtered quest from pool</span>
+<span class="fn">make_story_quest_doc</span>(chapter, user_id)      <span class="comment"># Creates chapter quest document</span>
+<span class="fn">advance_quest_progress</span>(doc, event, count)   <span class="comment"># Increments quest counter</span>
+<span class="fn">total_story_chapters</span>()                      <span class="comment"># Returns 10</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 09 · LORE & WORLD ═══════════════ -->
+  <section id="lore">
+    <div class="section-header reveal">
+      <span class="section-num">09</span><h2 class="section-title">LORE & WORLD</h2><div class="section-line"></div>
+    </div>
+    <div class="lore-quote reveal">
+      In the age before memory, the God-King Solarius forged five kingdoms from chaos and bound them with the Eternal Covenant. The Sundering tore it apart. His divine essence shattered into Anima Cores. You are one who touched a Core. A Rogue. And Aethermoor is running out of time.
+    </div>
+    <div class="cards reveal" style="margin-top:28px;">
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">🏚️</span><div class="card-title">VAELTHORN</div>
+        <p>The Shattered Hometown. A market town at the edge of Thornwood, half-ruined by the Sundering. Levels 1–10.</p>
+        <span class="tag">STARTER REGION</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">🌲</span><div class="card-title">THORNWOOD</div>
+        <p>A cursed ancient forest haunted by bandits, vine horrors, and forest witches. Levels 8–20.</p>
+        <span class="tag">MID REGION</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">⛰️</span><div class="card-title">ASHPEAK</div>
+        <p>Volcanic highland of the dwarven ruins. Home to automatons, trolls, and lava sprites. Levels 18–35.</p>
+        <span class="tag">HIGH REGION</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">🌑</span><div class="card-title">VOIDMARSH</div>
+        <p>The edge of known reality. Void crawlers and shade lords stalk the dark. Night mobs amplified. Levels 30+.</p>
+        <span class="tag">ENDGAME REGION</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">☀️</span><div class="card-title">SOLARIUM</div>
+        <p>The sealed pinnacle. Ancient dragons and void heralds guard the truth of the Sundering. Levels 40–50.</p>
+        <span class="tag">FINAL REGION</span>
+      </div>
+      <div class="card" onmousemove="cardGlow(event,this)">
+        <span class="card-icon">⚡</span><div class="card-title">GODS & FAITH</div>
+        <p>Full pantheon with domains, day/night restrictions, boons, and curses. Faith stat affects defence formula. Praying costs no gold.</p>
+        <span class="tag">LORE.PY · FAITH.PY</span>
+      </div>
+    </div>
+    <div class="code-block reveal" style="margin-top:24px;">
+      <span class="code-label">lore.py · functions</span>
+<span class="fn">path_info</span>(path_key)       <span class="comment"># Returns path lore dict</span>
+<span class="fn">random_ambient</span>(region)    <span class="comment"># Random ambient flavour line</span>
+<span class="fn">random_rumour</span>()           <span class="comment"># Random world rumour string</span>
+<span class="fn">roll_lore_drop</span>(lore_src)  <span class="comment"># Returns lore fragment on mob kill</span>
+<span class="fn">available_npcs</span>(phase)     <span class="comment"># Returns NPCs active in day or night</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 10 · BUILD PHASES ═══════════════ -->
+  <section id="phases">
+    <div class="section-header reveal">
+      <span class="section-num">10</span><h2 class="section-title">BUILD PHASES</h2><div class="section-line"></div>
+    </div>
+    <div class="timeline reveal">
+      <div class="tl-item">
+        <div class="tl-phase">PHASE 1 · v0.1.0</div>
+        <div class="tl-title">FOUNDATIONS</div>
+        <div class="tl-desc">Config env loader, Motor DB setup (7 collections), user profile schema, @sudo_only / @group_admin_only decorators, plugin bootstrap with importlib, graceful shutdown.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-phase">PHASE 2 · v0.2.0</div>
+        <div class="tl-title">GAMEPLAY CORE</div>
+        <div class="tl-desc">Full turn-based combat engine with 9 status effects and skills. Procedural dungeon floor generator. World cycle day/night service. Inventory dataclasses with enchants and skins. Faith, PvP, Social, Arcade, Alchemy, Quests (30 daily + 10-chapter story), Leaderboard, Lore plugins — all 13 plugins loaded.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-phase">PHASE 3 · PLANNED</div>
+        <div class="tl-title">ECONOMY & POLITICS</div>
+        <div class="tl-desc">Full P2P market with tax sinks. Clan vs Clan battles. Nation/political hierarchy. Hometown property ownership. Programmatic sale events. Black Friday discounts.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-phase">PHASE 4 · PLANNED</div>
+        <div class="tl-title">ENDGAME CONTENT</div>
+        <div class="tl-desc">World bosses requiring team effort. Post-story 1000+ quest unlock. Solarium region full implementation. Seasonal events. PvP ranked season system.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 11 · UPDATES ═══════════════ -->
+  <section id="updates">
+    <div class="section-header reveal">
+      <span class="section-num">11</span><h2 class="section-title">UPDATES</h2><div class="section-line"></div>
+    </div>
+
+    <div class="changelog-entry reveal">
+      <div style="display:flex;align-items:baseline;gap:0;margin-bottom:14px;"><span class="cl-version">v0.2.0</span><span class="cl-date">2026-04-15</span></div>
+      <div><span class="cl-type add">ADDITION</span><span class="cl-type chg">CHANGE</span><span class="cl-type fix">FIX</span></div>
+      <div class="cl-items">
+        <div class="cl-item">Full turn-based combat engine (combat.py) with 9 status effects, skills, passives, mana, lore drops</div>
+        <div class="cl-item">Procedural dungeon floor generator (dungeon.py) — 8 room types including boss and shrine</div>
+        <div class="cl-item">20-mob catalogue across 5 regions with level scaling and night bonuses</div>
+        <div class="cl-item">game/mechanics.py — STATUS_CATALOGUE, SKILLS_CATALOGUE, ALCHEMY_RECIPES, ENCHANTMENTS</div>
+        <div class="cl-item">game/lore.py — WORLD_LORE, REGIONS, GODS, NPCS with day/night scheduling</div>
+        <div class="cl-item">game/quests.py — 30 daily quests, 10-chapter story arc, advance_quest_progress()</div>
+        <div class="cl-item">Inventory models (Item, Enchantment, ItemSkin, Inventory) with enchants and skins support</div>
+        <div class="cl-item">WorldCycleService background task wired to main.py boot/shutdown</div>
+        <div class="cl-item">13 plugins loaded: start, combat, dungeon, quests, market, leaderboard, faith, pvp, social, arcade, skills_alchemy, inventory, lore_plugin</div>
+        <div class="cl-item">Rich async MongoDB layer for all 7 collections with character-path helpers and world-state helpers</div>
+        <div class="cl-item">Reworked /start into character-creation flow: path selection → profile → world phase display</div>
+        <div class="cl-item">User profile schema extended with STR/AGI/HP/INT/LUK/Faith/Reputation, wallet, and inventory chest</div>
+        <div class="cl-item">DAY_NIGHT_INTERVAL_SEC config support added</div>
+        <div class="cl-item">World cycle tick failures no longer crash the background loop</div>
+      </div>
+    </div>
+
+    <div class="changelog-entry reveal">
+      <div style="display:flex;align-items:baseline;gap:0;margin-bottom:14px;"><span class="cl-version">v0.1.0</span><span class="cl-date">2026-04-15</span></div>
+      <div><span class="cl-type add">ADDITION</span><span class="cl-type chg">CHANGE</span><span class="cl-type fix">FIX</span></div>
+      <div class="cl-items">
+        <div class="cl-item">bot/config.py — env loading/parsing for BOT_TOKEN, MONGO_URI, SUDO_USERS, all optional overrides</div>
+        <div class="cl-item">bot/database/db.py — async Motor setup with pool sizing, DNS fix (8.8.8.8), and profile helpers: get_user, create_user, update_user</div>
+        <div class="cl-item">bot/utils/decorators.py — @sudo_only and @group_admin_only async access guards</div>
+        <div class="cl-item">bot/plugins/start.py — bootstraps user profiles and sends RPG welcome UI with inline keyboard</div>
+        <div class="cl-item">bot/main.py — plugin loader (importlib scan), DB init/ping, graceful shutdown</div>
+        <div class="cl-item">bot/__main__.py — package runner entrypoint</div>
+        <div class="cl-item">Standardised runtime flow to the in-package bot/ structure</div>
+        <div class="cl-item">Removed misplaced root-level scaffold in favour of in-package implementation</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 12 · DEPLOYMENT ═══════════════ -->
+  <section id="deploy">
+    <div class="section-header reveal">
+      <span class="section-num">12</span><h2 class="section-title">DEPLOYMENT</h2><div class="section-line"></div>
+    </div>
+    <div class="code-block reveal" style="margin-bottom:20px;">
+      <span class="code-label">terminal · install & run</span>
+<span class="comment"># 1. Clone and enter project</span>
+git clone &lt;repo&gt; && cd ProjectRogue
+
+<span class="comment"># 2. Install dependencies</span>
+pip install -r requirements.txt
+
+<span class="comment"># 3. Configure environment (bot/config.txt)</span>
+API_ID=<span class="num">your_api_id</span>
+API_HASH=<span class="str">your_api_hash</span>
+BOT_TOKEN=<span class="str">your_bot_token</span>
+MONGO_URI=<span class="str">mongodb+srv://...</span>
+SUDO_USERS=<span class="num">123456789</span>
+
+<span class="comment"># 4. Run the bot</span>
+python -m bot
+    </div>
+    <div class="two-col reveal">
+      <div class="code-block" style="font-size:11.5px;">
+        <span class="code-label">requirements.txt</span>
+kurigram
+motor
+pymongo
+python-dotenv
+dnspython
+      </div>
+      <div class="code-block" style="font-size:11.5px;">
+        <span class="code-label">optional env vars</span>
+LOG_GC=<span class="num">-100123456</span>      <span class="comment"># Log group chat</span>
+LOG_LEVEL=<span class="str">INFO</span>           <span class="comment"># DEBUG|INFO|WARNING</span>
+WORKERS=<span class="num">64</span>               <span class="comment"># Pyrogram workers</span>
+DB_NAME=<span class="str">rogue_tales</span>      <span class="comment"># MongoDB db name</span>
+DAY_NIGHT_INTERVAL_SEC=<span class="num">900</span>  <span class="comment"># 15 min cycle</span>
+      </div>
+    </div>
+  </section>
+
+  <div style="padding:40px 60px;border-top:1px solid #222;display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-family:'Orbitron',sans-serif;font-size:11px;color:#ffffff;font-weight:bold;letter-spacing:0.25em;">PROJECT ROGUE // DOCS</span>
+    <span style="font-size:10px;color:#ffffff;letter-spacing:0.15em;">ROGUE TALES ENGINE · v0.2.0</span>
+  </div>
+
+</div>
+
+<script>
+// Canvas Background
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+const cols = Math.floor(window.innerWidth / 20);
+const drops = Array.from({length: cols}, () => Math.random() * -100);
+const chars = '01アイウエオカキクケコサシスセソタチツテト'.split('');
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(0,0,0,0.05)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = '14px "Share Tech Mono"';
+  for (let i = 0; i < drops.length; i++) {
+    const ch = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.4 + 0.1})`;
+    ctx.fillText(ch, i * 20, drops[i] * 20);
+    if (drops[i] * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}
+setInterval(drawMatrix, 60);
+
+// Scroll Reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e) => {
+    if (e.isIntersecting) {
+      e.target.style.transitionDelay = (e.target.dataset.delay || 0) + 'ms';
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
+// Stat Bars
+const barObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.stat-bar-fill').forEach(bar => {
+        setTimeout(() => bar.style.width = bar.dataset.w + '%', 200);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+const statSection = document.getElementById('stat-bars');
+if (statSection) barObserver.observe(statSection);
+
+// Active Nav
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a');
+const sectionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
+    }
+  });
+}, { threshold: 0.3 });
+sections.forEach(s => sectionObserver.observe(s));
+
+// Sidebar Mobile
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+document.querySelectorAll('#sidebar nav a').forEach(link => {
+  link.addEventListener('click', () => { document.getElementById('sidebar').classList.remove('open'); });
+});
+
+// Card Hover Glow
+function cardGlow(e, el) {
+  const r = el.getBoundingClientRect();
+  el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+  el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+}
+</script>
+</body>
+</html>
